@@ -1,115 +1,53 @@
 <?php
-namespace DlcBase\Service;
+namespace DlcBase\Form;
 
-use DlcBase\Mapper\AbstractMapper;
 use DlcBase\Module\ModuleNamespaceAwareInterface;
 use DlcBase\Options\ModuleOptionsAwareInterface;
 use Zend\ServiceManager\ServiceLocatorAwareInterface;
 use Zend\ServiceManager\ServiceLocatorInterface;
+use Zend\Form\Form;
 
 /**
- * Abstract service class
+ * Abstract form class
  */
-class AbstractService 
+abstract class AbstractForm extends Form
     implements ModuleNamespaceAwareInterface, 
                ModuleOptionsAwareInterface, 
                ServiceLocatorAwareInterface
 {
     /**
-     * Service class name without itt's namespace
-     * 
-     * @var string
-     */
-    protected $classNameWithoutNamespace;
-    
-    /**
-     * The mapper class for this service
-     * 
-     * @var AbstractMapper
-     */
-    protected $mapper;
-    
-    /**
      * The module namespace
-     * 
+     *
      * @var string
      */
     protected $moduleNamespace;
     
     /**
      * The module options
-     * 
+     *
      * @var DlcBase\Options\ModuleOptions
      */
     protected $options;
     
     /**
      * The service locator
-     * 
+     *
      * @var ServiceLocatorInterface
      */
     protected $serviceLocator;
     
     /**
-     * Magic __call method
+     * The constructor 
      * 
-     * @param string $method
-     * @param mixed $params
-     * @throws \BadFunctionCallException
-     * @return object
+     * @param  null|int|string  $name    Optional name for the element
+     * @param  array            $options Optional options for the element
      */
-    public function __call($method, $params)
+    public function __construct($name = null, $options = array())
     {
-        if (preg_match('/^get([A-Z]{1}[a-z]*)Form/', $method, $matches)) {
-            $serviceKey = strtolower($this->getModuleNamespace() . '_' . $matches[1] . $this->getClassNameWithoutNamespace() . '_form');
-            return $this->getServiceLocator()->get($serviceKey);
-        } else {
-            throw new \BadFunctionCallException('Unkown method "' . $method . '" called');
-        }
+        parent::__construct($name, $options);
     }
     
     /**
-     * Getter for the class name without it's namespace
-     *
-     * @return string
-     */
-    public function getClassNameWithoutNamespace()
-    {
-        if ($this->classNameWithoutNamespace === null) {
-            $class = explode('\\', get_class($this));
-            $this->classNameWithoutNamespace = end($class);
-        }
-        return $this->classNameWithoutNamespace;
-    }
-    
-    /**
-     * Getter for $mapper
-     *
-     * @return \DlcBase\Mapper\AbstractMapper $mapper
-     */
-    public function getMapper()
-    {
-        if (null === $this->mapper) {
-            $class = explode('\\', get_class($this));
-            $serviceKey = strtolower($this->getModuleNamespace() . '_' . end($class)) . '_mapper';
-            $this->setMapper($this->getServiceLocator()->get($serviceKey));
-        }
-        return $this->mapper;
-    }
-
-	/**
-     * Setter for $mapper
-     *
-     * @param  \DlcBase\Mapper\AbstractMapper $mapper
-     * @return AbstractService
-     */
-    public function setMapper($mapper)
-    {
-        $this->mapper = $mapper;
-        return $this;
-    }
-
-	/**
      * Getter for $moduleNamespace
      *
      * @return string $moduleNamespace
@@ -166,6 +104,9 @@ class AbstractService
     public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
     {
         $this->serviceLocator = $serviceLocator;
+        
+        $this->init();
+        
         return $this;
     }
     
@@ -177,5 +118,22 @@ class AbstractService
     public function getServiceLocator()
     {
         return $this->serviceLocator;
+    }
+    
+    /**
+     * (non-PHPdoc)
+     * @see \Zend\Form\Element::init()
+     */
+    public function init()
+    {
+        $this->add(array(
+            'type' => 'Zend\Form\Element\Csrf',
+            'name' => 'csrf',
+            'options' => array(
+                'csrf_options' => array(
+                    'timeout' => 600
+                )
+            )
+        ));
     }
 }

@@ -3,10 +3,23 @@ namespace DlcBase\Controller;
 
 use DlcBase\Module\ModuleNamespaceAwareInterface;
 use DlcBase\Options\ModuleOptionsAwareInterface;
+use DlcBase\Service\AbstractService;
 use Zend\Mvc\Controller\AbstractActionController AS ZendAbstractActionController;
 
-abstract class AbstractActionController extends ZendAbstractActionController implements ModuleNamespaceAwareInterface, ModuleOptionsAwareInterface
+/**
+ * Abstract action controller
+ */
+abstract class AbstractActionController extends ZendAbstractActionController 
+    implements ModuleNamespaceAwareInterface, 
+               ModuleOptionsAwareInterface
 {
+    /**
+     * Controller class name without it's namespace
+     * 
+     * @var string
+     */
+    protected $classNameWithoutNamespace;
+    
     /**
      * The module namespace (e.g. DlcBase)
      * 
@@ -15,13 +28,60 @@ abstract class AbstractActionController extends ZendAbstractActionController imp
     protected $moduleNamespace;
     
     /**
+     * Route identifier prefix
+     * 
+     * @var string
+     */
+    protected $routeIdentifierPrefix;
+    
+    /**
      * The module options
      * 
      * @var DlcBase\Options\ModuleOptions
      */
     protected $options;
     
-	/**
+    /**
+     * Service class Instance
+     * 
+     * @var AbstractService
+     */
+    protected $service;
+    
+    /**
+     * (non-PHPdoc)
+     * @see \Zend\Mvc\Controller\AbstractController::__call()
+     */
+    public function __call($method, $params)
+    {
+        if (preg_match('/^get([A-Z]{1}[a-z]*)Form/', $method, $matches)) {
+            return $this->getService()->$method();
+        } elseif (preg_match('/^get([A-Z]{1}[a-z]*)ActionRoute$/', $method, $matches)) {
+            //Return the action route identifier
+            return $this->getRouteIdentifierPrefix() . '/' . strtolower($matches[1]);
+        } elseif (preg_match('/^get([A-Z]{1}[a-z]*)ActionRedirectRoute$/', $method, $matches)) {
+            //Return the route for redirection after the action was successful
+            return $this->getRouteIdentifierPrefix();
+        } else {
+            return parent::__call($method, $params);
+        }
+    }
+    
+    /**
+     * Getter for the class name without it's namespace
+     * 
+     * @return string
+     */
+    public function getClassNameWithoutNamespace()
+    {
+        if ($this->classNameWithoutNamespace === null) {
+            $class = explode('\\', get_class($this));
+            $this->classNameWithoutNamespace = substr(end($class), 0, -10);
+        }
+        return $this->classNameWithoutNamespace;
+    }
+    
+    /**
      * Getter for $moduleNamespace
      *
      * @return string $moduleNamespace
@@ -34,8 +94,8 @@ abstract class AbstractActionController extends ZendAbstractActionController imp
         }
         return $this->moduleNamespace;
     }
-
-	/**
+    
+    /**
      * Setter for $moduleNamespace
      *
      * @param  string $moduleNamespace
@@ -46,8 +106,19 @@ abstract class AbstractActionController extends ZendAbstractActionController imp
         $this->moduleNamespace = $moduleNamespace;
         return $this;
     }
-
-	/**
+    
+    /**
+     * Returns the prefix for the route identifier
+     */
+    public function getRouteIdentifierPrefix()
+    {
+        if ($this->routeIdentifierPrefix === null) {
+            $this->routeIdentifierPrefix = strtolower($this->getModuleNamespace() . '/' . $this->getClassNameWithoutNamespace());
+        }
+        return $this->routeIdentifierPrefix;
+    }
+    
+    /**
      * Getter for $options
      *
      * @return \DlcBase\Options\ModuleOptions $options
@@ -60,8 +131,8 @@ abstract class AbstractActionController extends ZendAbstractActionController imp
         }
         return $this->options;
     }
-
-	/**
+    
+    /**
      * Setter for $options
      *
      * @param  \DlcBase\Options\ModuleOptions $options
@@ -72,4 +143,33 @@ abstract class AbstractActionController extends ZendAbstractActionController imp
         $this->options = $options;
         return $this;
     }
+    
+	/**
+     * Getter for $service
+     *
+     * @return \DlcBase\Service\AbstractService $service
+     */
+    public function getService()
+    {
+        if (null === $this->service) {
+            $class = explode('\\', get_class($this));
+            $class = substr(end($class), 0, -10);
+            $serviceKey = strtolower($this->getModuleNamespace() . '_' . $class . '_service');
+            $this->setService($this->getServiceLocator()->get($serviceKey));
+        }
+        return $this->service;
+    }
+
+	/**
+     * Setter for $service
+     *
+     * @param  \DlcBase\Service\AbstractService $service
+     * @return AbstractActionController
+     */
+    public function setService($service)
+    {
+        $this->service = $service;
+        return $this;
+    }
+
 }

@@ -2,6 +2,7 @@
     "name": "dl-commons/dlc-base",
     "description": "A set of generic (abstract) classes which are commonly used across multiple modules.",
     "type": "library",
+    "license": "MIT",
     "keywords": [
         "module",
         "zf2"
@@ -16,7 +17,7 @@
     ],
     "require": {
         "php": ">=5.3.3",
-        "zendframework/zendframework": ">2.1.3",
+        "zendframework/zendframework": ">2.1.3"
     },
     "minimum-stability": "dev",
     "autoload": {

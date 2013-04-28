@@ -10,9 +10,9 @@ use Zend\ServiceManager\ServiceLocatorInterface;
 /**
  * Abstract service class
  */
-class AbstractEntityService extends AbstractService 
-    implements ModuleNamespaceAwareInterface, 
-               ModuleOptionsAwareInterface, 
+class AbstractEntityService extends AbstractService
+    implements ModuleNamespaceAwareInterface,
+               ModuleOptionsAwareInterface,
                ServiceLocatorAwareInterface
 {
     /**
@@ -22,17 +22,17 @@ class AbstractEntityService extends AbstractService
     {
         return $this->getMapper()->findAll();
     }
-    
+
     /**
      * Returns a single entity
-     * 
+     *
      * @param int $id
      */
     public function getById($id)
     {
         return $this->getMapper()->find($id);
     }
-    
+
     /**
      * createFromForm
      *
@@ -45,28 +45,28 @@ class AbstractEntityService extends AbstractService
         $class  = $this->getMapper()->getEntityClass();
         $entity = new $class;
         $form   = $this->getAddForm();
-    
+
         if ($skipCsrfCheck) {
             $form->remove('csrf');
         }
-        
+
         $form->bind($entity);
         $form->setData($data);
-        
+
         if (!$form->isValid()) {
             return false;
         }
-        
+
         //$this->getEventManager()->trigger(__FUNCTION__, $this, array('entity' => $entity, 'form' => $form));
         $this->getMapper()->save($entity);
         //$this->getEventManager()->trigger(__FUNCTION__.'.post', $this, array('entity' => $entity, 'form' => $form));
-    
+
         return $entity;
     }
-    
+
     /**
      * Updates an entity
-     * 
+     *
      * @param int $id
      * @param array $data
      * @return boolean|\DlcBase\Entity\AbstractEntity
@@ -74,22 +74,22 @@ class AbstractEntityService extends AbstractService
     public function update($id, array $data)
     {
         $this->validateId($id);
-    
+
         $entity = $this->getById($id);
         $form   = $this->getEditForm();
-    
+
         $form->bind($entity);
         $form->setData($data);
-    
+
         if (!$valid = $form->isValid()) {
             return false;
         }
-    
+
         $this->getMapper()->save($entity);
-    
+
         return $entity;
     }
-    
+
     /**
      * Deletes an entity
      *
@@ -99,18 +99,18 @@ class AbstractEntityService extends AbstractService
     public function delete($id)
     {
         $this->validateId($id);
-    
+
         $entity = $this->getMapper()->find($id);
-    
+
         if (null === $entity) {
             throw new \InvalidArgumentException('No entity found for id "' . $id . '"');
         }
-    
+
         $this->getMapper()->remove($entity);
-    
+
         return $this;
     }
-    
+
     /**
      * Returns a pagination object with entities
      *
@@ -119,16 +119,17 @@ class AbstractEntityService extends AbstractService
      * @param null|string $query
      * @param null|string $orderBy
      * @param string $sort
+     * @param null|array $filter
      * @return \Zend\Paginator\Paginator
      */
-    public function pagination($page, $limit, $query = null, $orderBy = null, $sort = 'ASC')
+    public function pagination($page, $limit, $query = null, $orderBy = null, $sort = 'ASC', $filter = null)
     {
-        return $this->getMapper()->pagination($page, $limit, $query, $orderBy, $sort);
+        return $this->getMapper()->pagination($page, $limit, $query, $orderBy, $sort, $filter);
     }
-    
+
     /**
      * Validates the ID of an entity
-     * 
+     *
      * @param int $id
      * @throws \InvalidArgumentException
      */
